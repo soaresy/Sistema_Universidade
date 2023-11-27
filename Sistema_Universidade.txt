@@ -1,0 +1,68 @@
+USE Areas;
+
+DROP PROCEDURE IF EXISTS InserirCurso;
+
+DELIMITER //
+
+CREATE PROCEDURE InserirCurso (
+    IN p_nome_curso VARCHAR(255),
+    IN p_area_id INT
+)
+BEGIN
+    INSERT INTO Cursos (nome_curso, area_id)
+    VALUES (p_nome_curso, p_area_id);
+END //
+
+DELIMITER //
+
+CREATE FUNCTION ObterIDdoCurso (
+    p_nome_curso VARCHAR(255),
+    p_nome_area VARCHAR(255)
+) RETURNS INT
+BEGIN
+    DECLARE curso_id INT;
+
+    SELECT c.curso_id INTO curso_id
+    FROM Cursos c
+    JOIN Areas a ON c.area_id = a.area_id
+    WHERE c.nome_curso = p_nome_curso AND a.nome_area = p_nome_area;
+
+    RETURN curso_id;
+END //
+
+DELIMITER //
+
+CREATE PROCEDURE MatricularAluno (
+    IN p_nome_aluno VARCHAR(255),
+    IN p_sobrenome_aluno VARCHAR(255),
+    IN p_email_aluno VARCHAR(255),
+    IN p_nome_curso VARCHAR(255),
+    IN p_nome_area VARCHAR(255)
+)
+BEGIN
+    DECLARE aluno_id INT;
+    DECLARE curso_id INT;
+
+    SELECT aluno_id INTO aluno_id
+    FROM Alunos
+    WHERE email = p_email_aluno;
+    
+    IF aluno_id IS NULL THEN
+      
+        INSERT INTO Alunos (nome, sobrenome, email)
+        VALUES (p_nome_aluno, p_sobrenome_aluno, p_email_aluno);
+        
+        
+        SET curso_id = ObterIDdoCurso(p_nome_curso, p_nome_area);
+        
+       
+        INSERT INTO Matriculas (aluno_id, curso_id, data_matricula)
+        VALUES (LAST_INSERT_ID(), curso_id, NOW());
+        
+        SELECT 'Matrícula realizada com sucesso!' AS mensagem;
+    ELSE
+        SELECT 'Aluno já está matriculado em um curso!' AS mensagem;
+    END IF;
+END //
+
+DELIMITER ;
